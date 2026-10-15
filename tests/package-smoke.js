@@ -1,0 +1,83 @@
+const { _electron: electron } = require('playwright-core');
+const path = require('node:path');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+let electronApp;
+
+(async () => {
+  const executablePath = path.join(__dirname, '..', 'dist', 'win-unpacked', 'Rumo ao CPM.exe');
+  const launchEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'ELECTRON_RUN_AS_NODE'));
+  const userData = await fs.mkdtemp(path.join(os.tmpdir(), 'cpm-package-'));
+  electronApp = await electron.launch({ executablePath, args: [`--user-data-dir=${userData}`], env: launchEnv });
+  const page = await electronApp.firstWindow();
+  await page.waitForSelector('.brand');
+  if ((await page.title()) !== 'Rumo ao CPM e CEP') throw new Error('Título inesperado no pacote.');
+  await page.getByRole('button', { name: /Criar simulado/ }).first().click();
+  await page.getByRole('button', { name: /Gerar simulado/ }).click();
+  await page.waitForSelector('.question-card');
+  if (await page.locator('.question-pill').count() !== 35) throw new Error('O pacote não gerou as 35 questões.');
+  const editalExists = await electronApp.evaluate(async ({ app }) => {
+    const fs = process.getBuiltinModule('fs');
+    const path = process.getBuiltinModule('path');
+    return fs.existsSync(path.join(process.resourcesPath, 'documentos', 'Edital-CPM-2027.pdf')) && app.isPackaged;
+  });
+  if (!editalExists) throw new Error('O edital local não foi incluído no pacote.');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: /Ir para o início/ }).click();
+  await page.getByRole('button', { name: 'Provas reais', exact: true }).click();
+  if (await page.locator('.archive-card').count() !== 13) throw new Error('Acervo não incluído no EXE.');
+  await page.getByRole('button', { name: /Ler prova completa/ }).first().click();
+  await page.waitForFunction(() => { const img = document.querySelector('.document-sheet img'); return img?.complete && img.naturalWidth > 0; });
+  const docsExist = await electronApp.evaluate(() => {
+    const fs = process.getBuiltinModule('fs');
+    const path = process.getBuiltinModule('path');
+    const docs = path.join(process.resourcesPath, 'app.asar', 'web', 'documents');
+    return fs.existsSync(path.join(docs, '2018 - Ensino Fundamental.docx')) && fs.existsSync(path.join(docs, 'pe-2025.pdf'));
+  });
+  if (!docsExist) throw new Error('Documentos originais não incluídos no EXE.');
+  await electronApp.evaluate(({ shell }) => {
+    globalThis.cpmOpenedPath = null;
+    shell.openPath = async documentPath => { globalThis.cpmOpenedPath = documentPath; return ''; };
+  });
+  const openError = await page.evaluate(() => window.desktop.openDocument('documents/2018 - Ensino Fundamental.docx'));
+  if (openError) throw new Error('Não foi possível extrair o DOCX do pacote.');
+  const copiedOriginal = await electronApp.evaluate(() => {
+    const fs = process.getBuiltinModule('fs');
+    const path = process.getBuiltinModule('path');
+    return fs.readFileSync(globalThis.cpmOpenedPath).equals(fs.readFileSync(path.join(process.resourcesPath, 'app.asar', 'web', 'documents', '2018 - Ensino Fundamental.docx')));
+  });
+  if (!copiedOriginal) throw new Error('O DOCX extraído foi alterado.');
+  const invalidPath = await page.evaluate(() => window.desktop.openDocument('documents/../../package.json'));
+  if (!invalidPath) throw new Error('O pacote permitiu abrir um arquivo fora do acervo.');
+  await page.getByRole('button', { name: 'CEP · 2027', exact: true }).click();
+  if (await page.evaluate(() => window.CEP_BANK.length !== 616 || window.CHALLENGE_BANK.questions.length !== 430 || window.CEP_REGIONAL.count !== 64)) throw new Error('Ampliação de questões não incluída no pacote.');
+  if (await page.evaluate(() => window.VISUAL_QUESTION_BANK?.added !== 32 || window.VISUAL_QUESTION_BANK?.illustrated !== 43 || Object.keys(window.CHALLENGE_VISUALS || {}).length !== 53 || window.EXAM_PR_BANK.count !== 118 || window.EXAM_PR_BANK.revised.length !== 24 || window.CEP_VISUALS.v_park !== window.CHALLENGE_VISUALS.v_park)) throw new Error('Questões com imagens não incluídas nos dois preparatórios do pacote.');
+  await page.getByRole('button', { name: 'Paraná e Curitiba: treino avançado', exact: true }).click();
+  await page.getByRole('button', { name: 'Treinar Paraná e Curitiba', exact: true }).click();
+  if (await page.evaluate(() => JSON.parse(localStorage.getItem('rumoCep.v1')).session.questions.some(q => q.collection !== 'parana-curitiba'))) throw new Error('Treino regional não funciona no pacote.');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Descartar simulado', exact: true }).click();
+  await page.getByRole('button', { name: 'Simulado de 30 questões', exact: true }).click();
+  if (await page.locator('.cep-numbers button').count() !== 30) throw new Error('CEP ausente no pacote.');
+  const cepSession = await page.evaluate(() => JSON.parse(localStorage.getItem('rumoCep.v1')).session);
+  if (cepSession.questions.filter(q => q.difficulty === 'difícil').length !== 30 || cepSession.questions.some(q => !/^cep[23]-/.test(q.id))) throw new Error('Banco novo CEP não incluído no pacote.');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Descartar simulado', exact: true }).click();
+  if (await page.evaluate(() => JSON.parse(localStorage.getItem('rumoCep.v1')).session !== null)) throw new Error('Descarte CEP falhou no pacote.');
+  await page.getByRole('button', { name: 'Estudo guiado', exact: true }).click();
+  if (await page.evaluate(() => window.CEP_LESSONS.lessons.length) !== 42) throw new Error('Aulas CEP ausentes no pacote.');
+  await page.locator('#cep-guide-subject').selectOption('matematica');
+  await page.locator('#cep-guide-item').selectOption('m09');
+  await page.getByRole('button', { name: '3. Testar sem ajuda', exact: true }).click();
+  if (await page.locator('[data-c="study-check-answer"]').count() !== 4 || await page.locator('.cep-correction').count() !== 0) throw new Error('Teste de aula falhou no pacote.');
+  await page.getByRole('button', { name: 'Fontes', exact: true }).click();
+  await page.getByRole('button', { name: 'Ler edital offline', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('#cep-pdf-canvas')?.width > 0);
+  await page.evaluate(() => localStorage.clear());
+  await electronApp.close();
+  process.stdout.write('EXE validado: inicialização, simulado, edital, acervo offline e extração intacta dos DOCX.\n');
+})().catch(async (error) => {
+  process.stderr.write(`${error.stack}\n`);
+  if (electronApp) await electronApp.close();
+  process.exitCode = 1;
+});

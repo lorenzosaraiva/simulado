@@ -1,0 +1,72 @@
+{
+  "name": "rumo-ao-cpm",
+  "version": "1.10.0",
+  "description": "Preparatório independente CPM e CEP com progresso local",
+  "main": "electron/main.js",
+  "author": "Uso pessoal",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/e2e.js",
+    "test:mobile": "node tests/mobile-layout.js",
+    "test:package": "node tests/package-smoke.js",
+    "icon": "node scripts/make-icon.js",
+    "mobile:bridge": "esbuild mobile/native-bridge.js --bundle --format=iife --outfile=web/native.js",
+    "android:sync": "npm run mobile:bridge && cap sync android",
+    "android:build": "cd android && gradlew.bat assembleDebug",
+    "android:apk": "npm run android:sync && npm run android:build",
+    "build": "electron-builder --win portable",
+    "test:cep": "node tests/cep-e2e.js",
+    "test:study": "node tests/cep-study-e2e.js",
+    "test:regional": "node tests/cep-regional-e2e.js",
+    "test:variety": "node tests/variety-e2e.js",
+    "test:expansion": "node tests/londrina-cmpa-e2e.js",
+    "test:visual": "node tests/visual-questions-e2e.js",
+    "test:alignment": "node tests/exam-alignment-e2e.js",
+    "audit:bank": "node scripts/audit-bank.js"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/browser": "^6.0.6",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^6.2.2",
+    "@capacitor/filesystem": "^6.0.4",
+    "@capacitor/share": "^6.0.4",
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.28.2",
+    "pdfjs-dist": "^4.10.38",
+    "playwright-core": "^1.63.0",
+    "png-to-ico": "^3.0.2",
+    "sharp": "^0.35.4",
+    "tesseract.js": "^6.0.1"
+  },
+  "build": {
+    "appId": "br.com.rumo.cpm",
+    "productName": "Rumo ao CPM",
+    "artifactName": "Rumo-ao-CPM-CEP-${version}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "web/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "DECProcessoClassificatorio2027Edital001Abertura.pdf",
+        "to": "documentos/Edital-CPM-2027.pdf"
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "portable"
+      ]
+    }
+  }
+}

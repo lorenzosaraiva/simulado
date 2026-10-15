@@ -1,0 +1,26 @@
+const {_electron:electron}=require('playwright-core'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
+let app;
+(async()=>{
+ const profile=await fs.mkdtemp(path.join(os.tmpdir(),'exam-alignment-')),env=Object.fromEntries(Object.entries(process.env).filter(([k])=>k!=='ELECTRON_RUN_AS_NODE'));
+ app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${profile}`],env});const page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route(/^https?:\/\//,r=>r.abort());await page.waitForFunction(()=>!!window.CEP_APP);
+ assert.deepEqual(await page.evaluate(()=>({cep:CEP_BANK.length,added:EXAM_PR_BANK.count,revised:EXAM_PR_BANK.revised.length,regional:CEP_REGIONAL.count})),{cep:616,added:118,revised:24,regional:64});
+ assert.deepEqual(await page.evaluate(()=>Object.entries(CHALLENGE_VISUALS).filter(([k])=>k.startsWith('pr_')).filter(([,s])=>new DOMParser().parseFromString(s,'image/svg+xml').querySelector('parsererror')).map(([k])=>k)),[]);
+ await page.evaluate(()=>{const choose=CPM_PRACTICE.select;CPM_PRACTICE.select=(b,...args)=>{const qs=choose(b,...args);qs[0]=b.portugues.find(q=>q.visual==='pr_green');return qs;};});
+ await page.getByRole('button',{name:/Criar simulado/}).first().click();await page.getByRole('button',{name:'Gerar simulado',exact:true}).click();assert.equal(await page.locator('.challenge-visual svg').count(),1);await page.getByRole('button',{name:'Ampliar imagem',exact:true}).click();assert.equal(await page.locator('dialog.question-zoom svg').count(),1);await page.getByRole('button',{name:'Fechar ampliação',exact:true}).click();
+ const old=await page.evaluate(()=>JSON.parse(localStorage.getItem('rumoCpm.current.v1')));await page.locator('.option').nth(old.questions[0].correct).click();await page.getByRole('button',{name:'Checar resposta',exact:true}).click();assert.equal(await page.locator('.option:disabled').count(),4);
+ await page.getByRole('button',{name:'CEP · 2027',exact:true}).click();await page.setViewportSize({width:390,height:844});
+ await page.evaluate(()=>{const choose=CEP_ENGINE.select;CEP_ENGINE.select=(b,...args)=>choose(b.filter(q=>q.examStyle&&q.visual===window.__targetVisual).slice(0,1),...args);});
+ for(const key of ['pr_green','pr_screen','pr_memory','pr_river','pr_tank','pr_loans','pr_floor','pr_net','pr_score','pr_solid','pr_organs','pr_web','pr_profile','pr_compass','pr_coordinates','pr_milestones']){
+  await page.evaluate(k=>window.__targetVisual=k,key);await page.getByRole('button',{name:'Treinar',exact:true}).click();await page.getByRole('button',{name:'Começar treino',exact:true}).click();assert.equal(await page.locator('.cep-visual svg').count(),1,key);
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1),key);const q=await page.evaluate(()=>JSON.parse(localStorage.getItem('rumoCep.v1')).session.questions[0]);await page.locator(`[data-c="answer"][data-value="${q.correctId}"]`).click();await page.getByRole('button',{name:'Conferir minha resposta',exact:true}).click();assert.equal(await page.locator('.cep-option:disabled').count(),4);
+  if(key==='pr_milestones'){await page.getByText('Conferir as fontes desta questão autoral',{exact:true}).click();await page.getByRole('button',{name:q.references[0].name,exact:true}).click();await page.waitForFunction(()=>{const img=document.querySelector('dialog img');return img?.complete&&img.naturalWidth>0;});await page.getByRole('button',{name:'Fechar ampliação',exact:true}).click();}
+  await page.getByRole('button',{name:'Ampliar imagem',exact:true}).click();assert.equal(await page.locator('dialog.cep-zoom svg').count(),1);await page.getByRole('button',{name:'Fechar ampliação',exact:true}).click();
+  if(key==='pr_green')await page.screenshot({path:'artifacts/exam-review/charge-mobile.png',fullPage:true});page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Descartar simulado',exact:true}).click();
+ }
+ assert.deepEqual(errors,[]);
+ const graphics=await page.evaluate(()=>Object.fromEntries(Object.entries(CHALLENGE_VISUALS).filter(([k])=>k.startsWith('pr_'))));await page.setViewportSize({width:1500,height:1000});
+ const gallery=keys=>`<html lang="pt-BR"><style>body{font-family:Arial;background:#f2efe7;padding:15px}main{display:grid;grid-template-columns:repeat(2,700px);gap:15px}figure{margin:0;background:white}svg{width:700px;height:auto}figcaption{padding:9px}</style><main>${keys.map(k=>`<figure>${graphics[k]}<figcaption>${k} · figura autoral</figcaption></figure>`).join('')}</main></html>`;
+ await page.setContent(gallery(['pr_green','pr_screen','pr_memory','pr_river']));await page.screenshot({path:'artifacts/exam-review/new-charges.png',fullPage:true});
+ await page.setContent(gallery(Object.keys(graphics).filter(k=>!['pr_green','pr_screen','pr_memory','pr_river'].includes(k))));await page.screenshot({path:'artifacts/exam-review/new-diagrams.png',fullPage:true});await app.close();app=null;
+ console.log('118 novos itens, 24 revisões, 16 SVGs, fontes e zoom offline, CPM/CEP, celular e respostas bloqueadas verificados.');
+})().catch(async e=>{console.error(e);if(app)await app.close();process.exitCode=1;});

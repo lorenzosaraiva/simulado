@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>Rumo ao CPM e CEP</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="cep/styles.css" />
+  </head>
+  <body>
+    <nav class="school-tabs" aria-label="Preparatório"><span>Escolha seu preparatório</span><button id="school-cpm" aria-pressed="true">CPM</button><button id="school-cep" aria-pressed="false">CEP · 2027</button></nav>
+    <div id="app"></div>
+    <div id="cep-app" hidden></div>
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+    <script src="schools.js"></script>
+    <script src="native.js"></script>
+    <script src="extra-questions.js"></script>
+    <script src="challenge-bank.js"></script>
+    <script src="challenge-math.js"></script>
+    <script src="challenge-world.js"></script>
+    <script src="challenge-londrina-cmpa.js"></script>
+    <script src="challenge-londrina-math.js"></script>
+    <script src="challenge-londrina-world.js"></script>
+    <script src="challenge-visuals.js"></script>
+    <script src="challenge-exam.js"></script>
+    <script src="challenge-exam-math.js"></script>
+    <script src="challenge-exam-world.js"></script>
+    <script src="challenge-exam-history.js"></script>
+    <script src="challenge-review.js"></script>
+    <script src="questions.js"></script>
+    <script src="practice.js"></script>
+    <script src="archive.js"></script>
+    <script src="app.js"></script>
+    <script src="vendor/tesseract.min.js"></script>
+    <script src="cep/coverage.js"></script>
+    <script src="cep/bank-v2.js"></script>
+    <script src="cep/math-v2.js"></script>
+    <script src="cep/world-v2.js"></script>
+    <script src="cep/regional.js"></script>
+    <script src="cep/challenges.js"></script>
+    <script src="cep/exam-review.js"></script>
+    <script src="cep/visuals.js"></script>
+    <script src="cep/regional-visuals.js"></script>
+    <script src="cep/engine.js"></script>
+    <script src="cep/learning.js"></script>
+    <script src="cep/lessons.js"></script>
+    <script src="cep/lessons-portuguese.js"></script>
+    <script src="cep/lessons-math.js"></script>
+    <script src="cep/lessons-world.js"></script>
+    <script src="cep/regional-lessons.js"></script>
+    <script src="cep/study-ui.js"></script>
+    <script src="cep/app.js"></script>
+  </body>
+</html>

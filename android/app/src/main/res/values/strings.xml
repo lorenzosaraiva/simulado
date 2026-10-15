@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Rumo ao CPM e CEP</string>
+    <string name="title_activity_main">Rumo ao CPM e CEP</string>
+    <string name="package_name">br.com.rumoaocpm.app</string>
+    <string name="custom_url_scheme">br.com.rumoaocpm.app</string>
+</resources>

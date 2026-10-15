@@ -1,0 +1,12 @@
+{
+  "appId": "br.com.rumoaocpm.app",
+  "appName": "Rumo ao CPM e CEP",
+  "webDir": "web",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f4f1e9"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
