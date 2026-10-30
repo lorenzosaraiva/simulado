@@ -17,7 +17,7 @@ let app;
   assert.equal(await page.locator('.cep-visual svg,.cep-visual img').count(),1);if(key==='v_brazil')await page.waitForFunction(()=>{const img=document.querySelector('.cep-visual img');return img?.complete&&img.naturalWidth>0;});
   const q=await page.evaluate(()=>JSON.parse(localStorage.getItem('rumoCep.v1')).session.questions[0]);await page.locator(`[data-c="answer"][data-value="${q.correctId}"]`).click();await page.getByRole('button',{name:'Conferir minha resposta',exact:true}).click();assert.equal(await page.locator('.cep-option:disabled').count(),4);
   await page.getByRole('button',{name:'Ampliar imagem',exact:true}).click();assert.equal(await page.locator('dialog.cep-zoom svg,dialog.cep-zoom img').count(),1);await page.getByRole('button',{name:'Fechar ampliação',exact:true}).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1));
-  if(key==='v_net')await page.screenshot({path:'artifacts/visual-cep-mobile.png',fullPage:true});page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Descartar simulado',exact:true}).click();
+  if(key==='v_net')await page.screenshot({path:'artifacts/visual-cep-mobile.png',fullPage:true});page.once('dialog',d=>d.accept());await page.getByRole('button',{name:/^Descartar (simulado|treino)$/}).click();
  }
  assert.deepEqual(errors,[]);
  const graphics=await page.evaluate(()=>CHALLENGE_VISUALS);await page.setViewportSize({width:1600,height:1000});

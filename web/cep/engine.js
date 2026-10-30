@@ -28,7 +28,7 @@
     const usage=exposure(history,draws), recent=new Set(draws.slice(-3).flat()), needs=new Map(), families=new Map();
     bank.forEach(q=>families.set(family(q),(families.get(family(q))||0)+(usage.get(q.id)||0)));
     history.forEach(s=>s.questions.forEach((old,i)=> { if(s.answers[i]!==old.correctId || ['dúvida','chute'].includes(s.confidence[i])) old.items.forEach(id=>needs.set(id,(needs.get(id)||0)+1)); }));
-    return bank.map(q=>({q,tie:random()})).sort((a,b)=> Number(usage.has(a.q.id))-Number(usage.has(b.q.id)) || Number(recent.has(a.q.id))-Number(recent.has(b.q.id)) || (usage.get(a.q.id)||0)-(usage.get(b.q.id)||0) || (families.get(family(a.q))||0)-(families.get(family(b.q))||0) || Math.max(0,...b.q.items.map(id=>needs.get(id)||0))-Math.max(0,...a.q.items.map(id=>needs.get(id)||0)) || a.tie-b.tie).map(x=>x.q);
+    return bank.map(q=>({q,tie:random()})).sort((a,b)=> Number(!!b.q.fiel)-Number(!!a.q.fiel) || Number(usage.has(a.q.id))-Number(usage.has(b.q.id)) || Number(recent.has(a.q.id))-Number(recent.has(b.q.id)) || (usage.get(a.q.id)||0)-(usage.get(b.q.id)||0) || (families.get(family(a.q))||0)-(families.get(family(b.q))||0) || Math.max(0,...b.q.items.map(id=>needs.get(id)||0))-Math.max(0,...a.q.items.map(id=>needs.get(id)||0)) || a.tie-b.tie).map(x=>x.q);
   }
   function diverse(candidates, count, usage, recent, initial=[]) {
     const picked=[...initial], pending=candidates.filter(q=>!picked.includes(q));
@@ -36,7 +36,7 @@
       const families=new Map(),skills=new Map();
       picked.forEach(q=>{families.set(family(q),(families.get(family(q))||0)+1);skills.set(q.items[0],(skills.get(q.items[0])||0)+1);});
       const ranked=pending.map((q,index)=>({q,index})).sort((a,b)=>
-        Number(usage.has(a.q.id))-Number(usage.has(b.q.id)) || Number(recent.has(a.q.id))-Number(recent.has(b.q.id)) ||
+        Number(!!b.q.fiel)-Number(!!a.q.fiel) || Number(usage.has(a.q.id))-Number(usage.has(b.q.id)) || Number(recent.has(a.q.id))-Number(recent.has(b.q.id)) ||
         (usage.get(a.q.id)||0)-(usage.get(b.q.id)||0) ||
         (families.get(family(a.q))||0)-(families.get(family(b.q))||0) ||
         (skills.get(a.q.items[0])||0)-(skills.get(b.q.items[0])||0) ||
@@ -45,20 +45,46 @@
     }
     return picked;
   }
+  function levelQuota(count, mode) {
+    // Simulado: cerca de 50% difíceis, 40% médias e 10% fáceis. Diagnóstico: um terço de cada nível.
+    const share=mode==='simulado'?{difícil:.5,média:.4,fácil:.1}:{difícil:1/3,média:1/3,fácil:1/3};
+    const q={difícil:Math.round(count*share.difícil),fácil:Math.round(count*share.fácil)};
+    q.média=Math.max(0,count-q.difícil-q.fácil);return q;
+  }
   function select(bank, mode, filters, history=[], draws=[], random=Math.random) {
     filters ||= {};
     let pool=active(bank), chosen=[];
     const usage=exposure(history,draws),recent=new Set(draws.slice(-3).flat());
     if (mode==='simulado' || mode==='diagnóstico') {
       for (const [subject,count] of Object.entries(window.CEP_COVERAGE.distribution)) {
-        const candidates=priority(pool.filter(q=>q.subject===subject),history,draws,random);
-        // Difficulty is a training choice, not an official CEP quota.
+        let candidates=priority(pool.filter(q=>q.subject===subject),history,draws,random);
+        // O simulado usa as questões fiéis às provas; sem elas, vale o banco anterior (somente difíceis).
+        const fiel=candidates.filter(q=>q.fiel);
         let picked=[];
-        const mediumTarget=mode==='simulado'?0:Math.max(1,Math.floor(count/3));
-        if(mediumTarget) picked=diverse(candidates.filter(q=>q.difficulty==='média'),mediumTarget,usage,recent);
-        for(const difficulty of ['difícil','média','fácil']) {
-          const tier=candidates.filter(q=>q.difficulty===difficulty);
-          picked=diverse(tier,count,usage,recent,picked);
+        if(fiel.length>=count) {
+          candidates=fiel;
+          const quota=levelQuota(count,mode);
+          // Obrigatórios: obra literária em Português e conteúdos do Paraná em História e Geografia.
+          const regional=q=>q.collection==='parana-curitiba',image=q=>!!q.visual;
+          const must={portugues:[[q=>q.book,mode==='simulado'?2:1],[q=>image(q)&&!q.book&&!usage.has(q.id),2]],matematica:[[q=>image(q)&&!usage.has(q.id),1]],ciencias:[[q=>image(q)&&!usage.has(q.id),1]],geografia:[[regional,1],[q=>image(q)&&!regional(q)&&!usage.has(q.id),1]],historia:[[regional,1]]}[subject]||[];
+          for(const [test,n] of must) picked=diverse(candidates.filter(test),Math.min(n,candidates.filter(test).length)+picked.length,usage,recent,picked);
+          // Mandela: duas questões por simulado e uma por diagnóstico.
+          if(picked.filter(q=>q.book).length>=(mode==='simulado'?2:1)) candidates=candidates.filter(q=>!q.book||picked.includes(q));
+          const left={...quota};picked.forEach(q=>{let k=q.difficulty;if(!(left[k]>0))k=Object.keys(left).sort((a,b)=>left[b]-left[a])[0];if(left[k]>0)left[k]--;});
+          for(const difficulty of ['difícil','média','fácil']) {
+            // Só questões inéditas completam as cotas de nível; as repetidas entram apenas no fim.
+            const tier=candidates.filter(q=>q.difficulty===difficulty&&!usage.has(q.id));
+            picked=diverse(tier,picked.length+left[difficulty],usage,recent,picked);
+          }
+          picked=diverse(candidates,count,usage,recent,picked);
+        } else {
+          // Difficulty is a training choice, not an official CEP quota.
+          const mediumTarget=mode==='simulado'?0:Math.max(1,Math.floor(count/3));
+          if(mediumTarget) picked=diverse(candidates.filter(q=>q.difficulty==='média'),mediumTarget,usage,recent);
+          for(const difficulty of ['difícil','média','fácil']) {
+            const tier=candidates.filter(q=>q.difficulty===difficulty);
+            picked=diverse(tier,count,usage,recent,picked);
+          }
         }
         if(picked.length!==count) throw Error(`Banco insuficiente em ${window.CEP_COVERAGE.subjects[subject]}. Revise questões suspensas.`);
         chosen.push(...shuffle(picked,random));
@@ -66,6 +92,7 @@
     } else {
       if(filters.collection) pool=pool.filter(q=>q.collection===filters.collection);
       if(filters.subject) pool=pool.filter(q=>q.subject===filters.subject);
+      if(filters.book) pool=pool.filter(q=>q.book);
       if(filters.item) pool=pool.filter(q=>q.items.includes(filters.item));
       if(filters.difficulty) pool=pool.filter(q=>q.difficulty===filters.difficulty);
       if(mode==='interpretação') pool=pool.filter(q=>q.subject==='portugues'&&q.difficulty==='difícil'&&['p03','p04','p05','p06','p07','p08','p09'].some(id=>q.items.includes(id)));

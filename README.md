@@ -2,6 +2,19 @@
 
 Aplicativo local com preparatórios independentes para ingresso no 6º ano do CPM e do Colégio Estadual do Paraná (CEP).
 
+## Versão 1.11.0 — questões fiéis às provas, Mandela, Paraná e sessões livres
+
+**Banco novo "fiel à prova": 516 questões** (155 Português, 151 Matemática, 68 Ciências, 61 Geografia, 81 História), escritas depois de estudar as provas do CPM Paraná de 2018 a 2025 e o edital do CEP nº 005/2026. Em vez de perguntas de "qual conclusão é mais cuidadosa?", o banco cobra o que as provas cobram: tempos verbais, classes de palavras, acentuação, pontuação, divisão silábica, afirmativas I–IV, verdadeiro ou falso, associação de colunas, mmc e mdc, porcentagem em etapas, volume e capacidade, sistemas do corpo, Sistema Solar, colonização, povos indígenas e africanos, e Paraná. Alternativas erradas são plausíveis e têm extensão parecida com a da correta; o teste do projeto confere que a correta é a mais longa em no máximo 40% dos itens.
+
+- **Livro "Mandela: o africano de todas as cores"** (CEP): 37 questões sobre autoria, gênero, apartheid, prisão e libertação, eleição de 1994, vocabulário, figuras de linguagem e cronologia, com textos autorais inspirados na vida de Mandela e informações da ficha da edição (Pequena Zahar; ilustrações coloridas fora da prisão e em bege, preto e branco de 1962 a 1990; seção "Para compreender melhor"). Nenhuma cena ou citação do livro foi inventada. Todo simulado do CEP traz 2 questões da obra. A aba Mandela tem guia de fatos, treino e diário de leitura. No CPM, o simulado traz 2 questões da leitura recomendada do edital CPM (Edward Tulane).
+- **Charges, tirinhas e imagens:** 11 tirinhas e charges, cartazes, anúncio com letras miúdas, aviso, infográfico, gráficos de barras e de setores, tabelas, malhas, figura em L, planificação, vista de cubos, relógio, sequência de palitos, esquemas de ciências (ciclo da água, aquecimento, cadeia alimentar, plantas, Lua, Sistema Solar, sistema digestório, estados da matéria) e **mapas gerados da malha do IBGE** (Brasil por regiões, Paraná com cidades e escala gráfica). 101 questões têm imagem.
+- **Paraná e Curitiba:** 77 questões (história e geografia): povos Kaingang e Guarani, Guairá, tropeirismo, emancipação de 1853, erva-mate, Graciosa e ferrovia, imigração, Contestado, Cerco da Lapa, café no norte, Itaipu, relevo, rios, clima, vegetação, Curitiba (vila de 1693, cidade, Rua XV, IPPUC). Todo simulado traz pelo menos 1 questão de História e 1 de Geografia do Paraná.
+- **Simulado:** CEP com 30 questões (10/10/4/3/3) e CPM com 35, ambos de questões fiéis; cerca de 50% difíceis, 40% médias e 10% fáceis, para treinar acima do provável. Questões inéditas têm prioridade; o sorteio só repete depois de esgotar o banco (testado: 10 simulados seguidos sem repetição).
+- **Sem bloqueios:** com um simulado em andamento é possível treinar por assunto, estudar, ver o Paraná e o Mandela, e abrir qualquer aba. O simulado fica guardado (o relógio continua correndo) e volta pelo início. Cada treino ou simulado em andamento tem seu botão de **Descartar**. **Resultados finalizados podem ser excluídos** do histórico, na tela do resultado, no painel da responsável (CEP) ou no histórico (CPM); as questões voltam a contar como inéditas.
+- Matemática de grande volume é gerada por modelos com valores diferentes e conferida por cálculo independente (`tests/fiel-bank.test.js`).
+
+Pacotes: `dist/Rumo-ao-CPM-CEP-1.11.0.exe` e `dist/Rumo-ao-CPM-CEP-1.11.0.apk` (código de versão Android 12, mesma assinatura de desenvolvimento, atualiza a versão instalada).
+
 ## Versão 1.10.0 — assuntos e formatos das provas antigas
 
 **118 questões novas**: 28 de Português, 24 de Matemática, 18 de Ciências, 18 de Geografia e 30 de História. Os cadernos paranaenses de 2018 a 2025 orientam conteúdos e formatos: charges, gramática contextualizada, comparação de textos, sequências V/F, associação de colunas, análise de afirmativas, medidas, expressões, dados e sólidos. Cada questão identifica o caderno e os números usados como referência de habilidade e formato. Os textos, desenhos, problemas e alternativas novos são autorais, identificados como criados por IA.
@@ -12,7 +25,7 @@ Mais 28 questões de Paraná e Curitiba reforçam formação administrativa, pov
 
 Quatro novas charges e 12 diagramas/esquemas sustentam **31 questões ilustradas** desta ampliação, com transcrição acessível, zoom e funcionamento offline. Há 116 questões novas no CEP: duas de Primeiro Reinado/Regência são específicas do CPM e não entram na matriz CEP. Banco CEP total: **616 questões**, 600 difíceis e 16 médias. Os formatos CPM de 35 questões e CEP de 30 continuam independentes.
 
-Pacotes atuais: `dist/Rumo-ao-CPM-CEP-1.10.0.exe` e `dist/Rumo-ao-CPM-CEP-1.10.0.apk`. Android: código de versão 11, identificador e assinatura de desenvolvimento existentes.
+Pacotes da 1.10.0: `dist/Rumo-ao-CPM-CEP-1.10.0.exe` e `dist/Rumo-ao-CPM-CEP-1.10.0.apk`. Android: código de versão 11, identificador e assinatura de desenvolvimento existentes.
 
 `npm run audit:bank` verifica todos os itens CEP e a correspondência dos novos com o acervo offline; registra a auditoria e o mapa de referências em `artifacts/exam-review/bank-audit.json`. `npm test` inclui os 24 resultados matemáticos recalculados independentemente, a dobra do dado e a rotação. `npm run test:alignment` verifica os 16 SVGs, textos/fontes offline, correção, ampliação e tela de celular nos dois preparatórios. Capturas: `artifacts/exam-review/new-charges.png`, `new-diagrams.png` e `charge-mobile.png`.
 
@@ -44,7 +57,7 @@ Conferir uma resposta mantém a alternativa escolhida e bloqueia mudanças por c
 
 Duas abas independentes, CPM e CEP. Novo estudo específico de Paraná e Curitiba: 36 questões difíceis (18 História e 18 Geografia), quatro textos próprios e dois exemplos resolvidos. Referências enviadas consultadas e divergências conferidas em fontes oficiais. No CEP, revisão por primeira tentativa, confiança e habilidade; 42 aulas em quatro etapas, com exemplo próprio, comparação de alternativas, teste interativo e prática focada. O banco CEP foi integralmente reescrito com 188 questões autorais de interpretação e raciocínio em várias etapas. Treino abre na dificuldade difícil; simulado prioriza 30 difíceis. Há descarte da sessão sem nota e sem alteração dos resultados anteriores. Inclui simulado de 30 questões, diagnóstico, treinos, revisão de confiança, estudo guiado e painel da responsável. Importação de PDF/imagens com OCR local e backup completo. O livro obrigatório permanece pendente de material autorizado. Consulte [CEP-ENTREGA.md](CEP-ENTREGA.md) para fontes consultadas, cobertura real, testes e limites.
 
-Pacotes atuais: `dist/Rumo-ao-CPM-CEP-1.10.0.exe` e `dist/Rumo-ao-CPM-CEP-1.10.0.apk`.
+Pacotes da 1.10.0: `dist/Rumo-ao-CPM-CEP-1.10.0.exe` e `dist/Rumo-ao-CPM-CEP-1.10.0.apk`.
 
 ## Executar em desenvolvimento
 
@@ -59,7 +72,7 @@ npm start
 npm run build
 ```
 
-O executável será criado em `dist/Rumo-ao-CPM-CEP-1.10.0.exe`.
+O executável será criado em `dist/Rumo-ao-CPM-CEP-1.11.0.exe`.
 
 ## Gerar o APK Android
 

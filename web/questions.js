@@ -694,14 +694,15 @@
     };
     (window.CPM_EXTRA || []).forEach(q => bank[q.subject].push({ ...q }));
     (window.CHALLENGE_BANK?.questions || []).forEach(q => {
+      if (q.schools && !q.schools.includes('cpm')) return;
       const esc = text => text.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      const offset = Number(q.id.slice(-3)) % 4;
+      const offset = q.fixed ? 0 : Number(q.id.slice(-3)) % 4;
       const options = [...q.options.slice(offset), ...q.options.slice(0, offset)];
       bank[q.subject].push({ ...q, authored:true, topic:q.topic||q.family,
         prompt:`${q.base?`<section class="challenge-base"><p>${esc(q.base).replace(/\n/g,'<br>')}</p></section>`:''}<p>${esc(q.prompt)}</p>`,
         options:options.map(o=>o.text), correct:options.findIndex(o=>o.id===q.correctId),
         source:{label:q.references[0]?.name||'Resolução autoral · evidências do enunciado',url:q.references[0]?.url||null},
-        origin:'⚑ Criada por IA · desafio difícil' });
+        origin: q.fiel ? '⚑ Criada por IA · formato de prova' : '⚑ Criada por IA · desafio difícil' });
     });
     Object.keys(bank).forEach(subject => {
       const seen = new Set();

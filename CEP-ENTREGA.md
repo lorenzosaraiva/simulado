@@ -1,4 +1,33 @@
-# Preparatório CPM e CEP · versão 1.10.0
+# Preparatório CPM e CEP · versão 1.11.0
+
+## Revisão do banco e do aplicativo — 25/10/2026
+
+**Diagnóstico.** O banco anterior (616 itens CEP) rotulava tudo como "difícil", mas a maior parte era de perguntas de raciocínio genérico ("qual conclusão é mais cuidadosa?") com alternativas erradas absurdas ("sempre", "nunca"). Uma criança acertava sem conhecer o conteúdo. Faltavam também o livro de Mandela, charges, gramática, medidas e História do Paraná. As provas reais (CPM Paraná 2018–2025) cobram conteúdo: tempos verbais, classes de palavras, sílabas, V/F, afirmativas I–IV, mmc/mdc, volume, sistemas do corpo, Sistema Solar, colonização e fontes.
+
+**Novo banco "fiel à prova": 516 questões**, em `web/challenge-fiel-*.js`, compartilhado pelos dois preparatórios, com a mesma estrutura do banco anterior (quatro alternativas, justificativa por alternativa, itens do edital). Níveis: fácil, média e difícil (classificação editorial, sem calibração com estudantes). Simulado: ~50% difíceis, 40% médias, 10% fáceis; priorizam-se questões fiéis e ainda não vistas.
+
+| Matéria | Questões | Com imagem |
+|---|---|---|
+| Português | 155 (36 do livro Mandela, só CEP) | 38 |
+| Matemática | 151 | 32 |
+| Ciências | 68 | 13 |
+| Geografia | 61 | 13 |
+| História | 81 (1 sobre Mandela) | 5 |
+
+**Livro obrigatório (CEP).** Pesquisa feita na ficha da editora (Companhia das Letras / Pequena Zahar: 64 páginas, tradução de André Telles, original francês de 2010, selo FNLIJ 2014), em guias do professor e em resenhas: texto de Alain Serres, ilustrações de Zaü, biografia poética de Nelson Mandela, imagens coloridas fora da prisão e em bege/preto e branco entre 1962 e 1990, seção "Para compreender melhor" com palavras-chave, fotos, mapa e cronologia. O texto integral da obra **não está disponível** nem foi reproduzido. As questões usam fatos da biografia de Mandela (nascimento em 1918, apartheid oficializado em 1948, prisão em 1962, condenação em 1964, libertação em 11/02/1990, Nobel em 1993, presidência em 1994, morte em 05/12/2013), informações da ficha e textos autorais inspirados na vida dele, identificados como tal. **Recomenda-se que a responsável confira, com o livro em mãos, as questões que citam a obra** (autoria, gênero, ilustrações, seção final).
+
+**Paraná e Curitiba.** Fatos conferidos em fontes oficiais: lei imperial nº 704 (29/08/1853) e instalação em 19/12/1853 com Zacarias de Góis e Vasconcelos (Agência Estadual de Notícias), vila de Curitiba em 29/03/1693 (Prefeitura), além de conhecimento geral do material escolar do Paraná (tropeirismo, Guairá, imigração, Contestado, Cerco da Lapa, café, Itaipu). Mapas do Paraná e do Brasil são gerados da malha de UFs do IBGE (`scripts/build-fiel-maps.js`), com cidades em coordenadas conhecidas e escala gráfica de 100 km.
+
+**Aplicativo.**
+- Treinos, estudo, Mandela, Paraná e revisão funcionam com um simulado em andamento; o simulado fica guardado (até 6 sessões) e retorna pelo início. Descarte individual de simulados e treinos; exclusão de resultados finalizados (CEP: resultado e painel da responsável; CPM: histórico e detalhe).
+- CEP: guia da obra na aba Mandela; simulado com 2 questões da obra e ao menos uma de História e uma de Geografia do Paraná; matemática, imagens e tirinhas distribuídas pelo sorteio.
+- CPM: simulado de 35 questões com leitura recomendada do edital (Edward Tulane), Paraná, questões oficiais e do novo banco.
+
+**Limites declarados.** Nenhuma questão passou por revisão pedagógica humana independente. A dificuldade é uma escolha editorial. O estilo da prova do CEP de 2026 é desconhecido; as provas antigas usadas como referência são as do CPM Paraná. As imagens são desenhos simples, autorais, sem fotos reais.
+
+**Validação.** `npm test` (inclui `tests/fiel-bank.test.js`: estrutura, ausência de "tell" por tamanho/posição, 100+ resultados matemáticos recalculados de forma independente, composição de simulados, 10 simulados sem repetição), `npm run test:sessions` e os testes de interface existentes, atualizados.
+
+## Versão 1.10.0
 
 ## Ampliação e revisão a partir do acervo — 12/10/2026
 

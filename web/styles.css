@@ -648,3 +648,11 @@ html.native-platform .toast-region { bottom: calc(18px + env(safe-area-inset-bot
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* Parked exams and deletable results */
+.attempt-line { display: flex; align-items: stretch; border-top: 1px solid var(--line); background: var(--surface); }
+.attempt-line .attempt-row { border-top: 0; flex: 1; min-width: 0; }
+.attempt-delete { padding: 0 16px; white-space: nowrap; align-self: center; }
+.resume-banner { flex-wrap: wrap; }
+.resume-banner + .resume-banner { margin-top: 10px; }
+.detail-header { flex-wrap: wrap; gap: 12px; }

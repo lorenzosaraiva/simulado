@@ -30,16 +30,20 @@
     return { counts, recent, families };
   }
   function family(q) { return q.contextFamily || q.family || (q.id.startsWith('mat-') ? q.id.replace(/-\d.*$/, '') : q.base || q.id); }
-  function ranked(pool, attempts, random, limit = pool.length) {
+  // Questões fiéis às provas e questões oficiais passam à frente das demais autorais.
+  const isReal = q => !!q.fiel;
+  function ranked(pool, attempts, random, limit = pool.length, quota = null) {
     const { counts, recent, families } = usage(attempts);
     // Sample the tie breaker once; random values inside Array.sort are inconsistent.
     const candidates = pool.map(q => ({ q, key: fingerprint(q), tie: random() }));
-    const selected = [], usedFamilies = new Map(), usedTopics = new Map();
+    const selected = [], usedFamilies = new Map(), usedTopics = new Map(), left = quota ? { ...quota } : null;
     while (candidates.length && selected.length < limit) {
       candidates.sort((a, b) => {
         const ar = recent.get(a.key), br = recent.get(b.key);
         const aRecent = ar !== undefined && ar < 3, bRecent = br !== undefined && br < 3;
-        return Number(counts.has(a.key)) - Number(counts.has(b.key)) || Number(aRecent) - Number(bRecent) ||
+        const needs = q => left ? Number(left[q.difficulty || 'média'] > 0) : 0;
+        return Number(isReal(b.q)) - Number(isReal(a.q)) || needs(b.q) - needs(a.q) ||
+          Number(counts.has(a.key)) - Number(counts.has(b.key)) || Number(aRecent) - Number(bRecent) ||
           (counts.get(a.key) || 0) - (counts.get(b.key) || 0) ||
           Number(b.q.difficulty === 'difícil') - Number(a.q.difficulty === 'difícil') ||
           (usedFamilies.get(family(a.q)) || 0) - (usedFamilies.get(family(b.q)) || 0) ||
@@ -49,6 +53,7 @@
           (br ?? 9999) - (ar ?? 9999) || a.tie - b.tie;
       });
       const {q} = candidates.shift(); selected.push(q);
+      if (left) { let k = q.difficulty || 'média'; if (!(left[k] > 0)) k = Object.keys(left).sort((x, y) => left[y] - left[x])[0]; if (left[k] > 0) left[k]--; }
       usedFamilies.set(family(q), (usedFamilies.get(family(q)) || 0) + 1);
       usedTopics.set(q.topic, (usedTopics.get(q.topic) || 0) + 1);
     }
@@ -70,11 +75,20 @@
       const authored = pool.filter(q => !q.origin.startsWith('Oficial'));
       const official = pool.filter(q => q.origin.startsWith('Oficial'));
       let items;
+      // Simulado fiel às provas: cerca de 50% difíceis, 40% médias e 10% fáceis, com Paraná em História e Geografia.
+      const useFiel = authored.some(q => q.fiel);
+      const hard = Math.round(count * 0.5), easy = Math.round(count * 0.1), quota = useFiel ? { difícil: hard, fácil: easy, média: Math.max(0, count - hard - easy) } : null;
+      const regional = useFiel && ['historia', 'geografia'].includes(subject) ? authored.filter(q => q.fiel && q.collection === 'parana-curitiba') : [];
+      // Leitura recomendada do edital do CPM: A Extraordinária Jornada de Edward Tulane.
+      const book = useFiel && subject === 'portugues' ? authored.filter(q => String(q.topic || '').startsWith('Edward Tulane')) : [];
+      const must = [...(book.length ? ranked(book, attempts, random, 2) : []), ...(regional.length ? ranked(regional, attempts, random, 1) : []), ...(useFiel && mode !== 'new' && official.length ? ranked(official, attempts, random, 1) : [])];
+      const rest = a => a.filter(q => !must.includes(q));
+      const take = count - must.length;
       if (mode === 'new') {
-        items = ranked(authored, attempts, random, count);
+        items = [...must, ...ranked(rest(authored), attempts, random, take, quota)];
       } else {
         // Official questions join the same rotation instead of occupying fixed seats.
-        items = ranked([...authored, ...official], attempts, random, count);
+        items = [...must, ...ranked(rest([...authored, ...official]), attempts, random, take, quota)];
       }
       if (items.length !== count) throw new Error(`Banco insuficiente para ${subject}`);
       selected.push(...shuffled(items, random));

@@ -8,7 +8,7 @@ let app;
  const cpm=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('rumoCpm.current.v1')));
  const cep=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('rumoCep.v1')));
  await page.getByRole('button',{name:/Criar simulado/}).first().click();await page.getByRole('button',{name:'Gerar simulado',exact:true}).click();
- const initial=await cpm();assert.ok(initial.questions.every(q=>q.difficulty==='difícil'));
+ const initial=await cpm();assert.ok(initial.questions.filter(q=>q.difficulty==='difícil').length>=14);
  // Correct choice survives feedback, keyboard, navigation and reload without a score penalty.
  await page.locator('.option').nth(initial.questions[0].correct).click();await page.getByRole('button',{name:'Checar resposta',exact:true}).click();
  assert.equal(await page.locator('.option:disabled').count(),4);assert.equal((await cpm()).answers[0],initial.questions[0].correct);

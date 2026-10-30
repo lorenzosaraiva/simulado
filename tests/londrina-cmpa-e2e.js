@@ -5,7 +5,7 @@ let app;
  app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${profile}`],env});const page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  // All reading below must work with internet requests blocked.
  await page.route(/^https?:\/\//,route=>route.abort());await page.waitForFunction(()=>!!window.CEP_APP);
- assert.deepEqual(await page.evaluate(()=>({cep:CEP_BANK.length,shared:CHALLENGE_BANK.questions.length,new:LONDRINA_CMPA_BANK.count})),{cep:616,shared:430,new:160});
+ const fielN=await page.evaluate(()=>CHALLENGE_BANK.questions.filter(q=>q.fiel).length);assert.deepEqual(await page.evaluate(()=>({cep:CEP_BANK.length,shared:CHALLENGE_BANK.questions.length,new:LONDRINA_CMPA_BANK.count})),{cep:616+fielN,shared:430+fielN,new:160});
  await page.getByRole('button',{name:'Provas reais',exact:true}).click();await page.getByRole('button',{name:'Rio Grande do Sul',exact:true}).click();assert.equal(await page.locator('.archive-card').count(),2);
  await page.locator('.archive-card').filter({hasText:'ingresso 2026'}).getByRole('button',{name:/Ler prova completa/}).click();await page.locator('.document-page-select').first().selectOption({value:'34'});
  await page.waitForFunction(()=>{const img=document.querySelector('.document-sheet img');return img?.alt.includes('página 35')&&img.complete&&img.naturalWidth>0;});

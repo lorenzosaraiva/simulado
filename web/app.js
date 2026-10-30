@@ -5,6 +5,7 @@
   const STORAGE = {
     history: 'rumoCpm.history.v1',
     current: 'rumoCpm.current.v1',
+    parked: 'rumoCpm.parked.v1',
     profile: 'rumoCpm.profile.v1',
     draws: 'rumoCpm.draws.v2'
   };
@@ -44,6 +45,21 @@
   function history() {
     const value = loadJson(STORAGE.history, []);
     return Array.isArray(value) ? value : [];
+  }
+
+  function parkedExams() {
+    const value = loadJson(STORAGE.parked, []);
+    return Array.isArray(value) ? value.filter((exam) => exam && exam.status === 'active' && Array.isArray(exam.questions)) : [];
+  }
+
+  // Every unfinished exam, the current one first. Starting a training no longer discards a simulado.
+  function openExams() {
+    const current = loadJson(STORAGE.current, null);
+    return [...(current && current.status === 'active' ? [current] : []), ...parkedExams()];
+  }
+
+  function examLabel(exam) {
+    return exam.mix === 'review' ? 'Treino dos erros' : 'Simulado completo';
   }
 
   function escapeHtml(value) {
@@ -202,13 +218,14 @@
 
     const content = `
       <main class="page home-page">
-        ${current ? `
+        ${openExams().map((exam) => `
           <section class="resume-banner">
             <div class="resume-icon">${icon('clock', 24)}</div>
-            <div><b>Você tem um treino em andamento</b><span>${answeredCount(current)} de ${current.questions.length} questões respondidas</span></div>
-            <button class="button secondary compact" data-action="resume">Continuar ${icon('arrow', 17)}</button>
+            <div><b>${examLabel(exam)} em andamento</b><span>${answeredCount(exam)} de ${exam.questions.length} questões respondidas · restam ${formatDuration(remainingSeconds(exam))}</span></div>
+            <button class="button secondary compact" data-action="resume" data-id="${exam.id}">Continuar ${icon('arrow', 17)}</button>
+            <button class="button ghost compact" data-action="discard-exam" data-id="${exam.id}">Descartar</button>
           </section>
-        ` : ''}
+        `).join('')}
         <section class="hero">
           <div class="hero-copy">
             <span class="eyebrow">PROCESSO CLASSIFICATÓRIO 2027</span>
@@ -316,7 +333,7 @@
             <div class="summary-metrics"><div><b>35</b><span>questões</span></div><div><b>03:00</b><span>horas</span></div><div><b>4</b><span>alternativas</span></div></div>
             <div class="summary-subjects">${Object.entries(DISTRIBUTION).map(([key, count]) => `<span><i style="--subject:${SUBJECTS[key].color}"></i>${SUBJECTS[key].short}<b>${count}</b></span>`).join('')}</div>`}
             <button class="button primary wide" data-action="start">${state.draftMix === 'review' ? 'Ver meus erros' : 'Gerar simulado'} ${icon('arrow', 18)}</button>
-            ${current ? '<p class="replace-warning">Ao começar, o simulado que está em andamento será substituído.</p>' : ''}
+            ${current ? '<p class="replace-warning">O simulado em andamento fica guardado; você poderá continuar de onde parou.</p>' : ''}
           </aside>
         </section>
       </main>`;
@@ -332,6 +349,8 @@
     const selected = questions || window.CPM_PRACTICE.select(buildQuestionBank(), DISTRIBUTION, mix,
       [...(Array.isArray(previousDraws) ? previousDraws : []), ...history()]);
     if (!selected.length) return toast('Não há questões para este treino.');
+    const open = loadJson(STORAGE.current, null);
+    if (open && open.status === 'active') saveJson(STORAGE.parked, [open, ...parkedExams()].slice(0, 6));
     state.exam = {
       id: uid(),
       studentName: state.draftName,
@@ -373,8 +392,18 @@
     launchExam('review', attempts, questions);
   }
 
-  function resumeExam() {
-    const current = loadJson(STORAGE.current, null);
+  function resumeExam(id = null) {
+    let current = loadJson(STORAGE.current, null);
+    if (id && (!current || current.id !== id)) {
+      const parked = parkedExams();
+      const wanted = parked.find((exam) => exam.id === id);
+      if (wanted) {
+        const rest = parked.filter((exam) => exam.id !== id);
+        saveJson(STORAGE.parked, current && current.status === 'active' ? [current, ...rest] : rest);
+        saveJson(STORAGE.current, wanted);
+        current = wanted;
+      }
+    }
     if (!current || current.status !== 'active') {
       toast('Não há simulado em andamento.');
       homeView();
@@ -384,6 +413,20 @@
     state.view = 'exam';
     examView();
     scrollToTop();
+  }
+
+  function discardExam(id) {
+    if (!window.confirm('Descartar este treino em andamento? As respostas dele serão apagadas e não entrarão no histórico. Os resultados anteriores continuam salvos.')) return;
+    const current = loadJson(STORAGE.current, null);
+    if (current && current.id === id) {
+      localStorage.removeItem(STORAGE.current);
+      if (state.exam && state.exam.id === id) state.exam = null;
+    } else {
+      saveJson(STORAGE.parked, parkedExams().filter((exam) => exam.id !== id));
+    }
+    toast('Treino descartado. Nenhum resultado foi registrado.');
+    state.view = 'home';
+    homeView();
   }
 
   function saveCurrent() {
@@ -662,7 +705,7 @@
             <div class="panel evolution-panel"><div class="panel-heading"><div><span class="eyebrow">NOTA SEM CONSULTA</span><h2>Sua evolução</h2></div><span class="muted">Últimos 10</span></div>${sparkline(items)}</div>
             <div class="panel history-subjects"><div class="panel-heading"><div><span class="eyebrow">PRECISÃO</span><h2>Por matéria</h2></div></div>${Object.entries(SUBJECTS).map(([key, subject]) => `<div class="subject-progress"><span class="subject-dot" style="--dot:${subject.color}"></span><b>${subject.short}</b><div class="bar"><i style="width:${performance[key]}%;--bar:${subject.color}"></i></div><strong>${performance[key]}%</strong></div>`).join('')}</div>
           </section>
-          <section class="attempts-section"><div class="section-heading"><div><span class="eyebrow">ARQUIVO</span><h2>Simulados e revisões</h2></div><button class="text-button danger-text" data-action="clear-history">${icon('trash', 16)} Limpar histórico</button></div><div class="attempt-table"><div class="attempt-head"><span>Data</span><span>Nota</span><span>Tentativa registrada</span><span>Tempo</span><span></span></div>${items.map((item) => `<button class="attempt-row" data-action="history-detail" data-id="${item.id}"><span><b>${formatDate(item.finishedAt, true)}</b><small>${escapeHtml(item.studentName || 'Estudante')} · ${item.mix === 'review' ? 'Revisão' : 'Simulado'}</small></span><span><b>${item.score}/${item.questions.length}</b><small>${Math.round(item.score / item.questions.length * 100)}%</small></span><span><b>${item.cleanScore ?? item.score}/${item.questions.length}</b><small>${item.consultedCount || 0} consulta(s)</small></span><span>${formatDuration(item.durationUsed)}</span><span>${icon('arrow', 18)}</span></button>`).join('')}</div></section>
+          <section class="attempts-section"><div class="section-heading"><div><span class="eyebrow">ARQUIVO</span><h2>Simulados e revisões</h2></div><button class="text-button danger-text" data-action="clear-history">${icon('trash', 16)} Limpar histórico</button></div><div class="attempt-table"><div class="attempt-head"><span>Data</span><span>Nota</span><span>Tentativa registrada</span><span>Tempo</span><span></span></div>${items.map((item) => `<div class="attempt-line"><button class="attempt-row" data-action="history-detail" data-id="${item.id}"><span><b>${formatDate(item.finishedAt, true)}</b><small>${escapeHtml(item.studentName || 'Estudante')} · ${item.mix === 'review' ? 'Revisão' : 'Simulado'}</small></span><span><b>${item.score}/${item.questions.length}</b><small>${Math.round(item.score / item.questions.length * 100)}%</small></span><span><b>${item.cleanScore ?? item.score}/${item.questions.length}</b><small>${item.consultedCount || 0} consulta(s)</small></span><span>${formatDuration(item.durationUsed)}</span><span>${icon('arrow', 18)}</span></button><button class="text-button danger-text attempt-delete" data-action="delete-attempt" data-id="${item.id}" aria-label="Excluir este resultado">${icon('trash', 16)} Excluir</button></div>`).join('')}</div></section>
         ` : `
           <section class="empty-state large-empty"><div class="empty-illustration">${icon('chart', 34)}</div><h2>Nenhum resultado ainda</h2><p>Quando você concluir um simulado, a nota, as respostas e o desempenho por matéria aparecerão aqui.</p><button class="button primary" data-action="create">Criar primeiro simulado</button></section>
         `}
@@ -678,7 +721,7 @@
     const content = `
       <main class="page detail-page">
         <button class="back-button" data-action="history">${icon('back', 18)} Voltar ao histórico</button>
-        <section class="detail-header panel"><div><span class="eyebrow">${formatDate(item.finishedAt, true)}</span><h1>${item.mix === 'review' ? 'Resultado da revisão' : 'Resultado do simulado'}</h1><p>${escapeHtml(item.studentName || 'Estudante')} · ${formatDuration(item.durationUsed)} · ${item.consultedCount || 0} consulta(s)</p></div><div class="detail-score"><b>${item.score}</b><span>/${item.questions.length}</span><small>${pct}%</small></div></section>
+        <section class="detail-header panel"><div><span class="eyebrow">${formatDate(item.finishedAt, true)}</span><h1>${item.mix === 'review' ? 'Resultado da revisão' : 'Resultado do simulado'}</h1><p>${escapeHtml(item.studentName || 'Estudante')} · ${formatDuration(item.durationUsed)} · ${item.consultedCount || 0} consulta(s)</p></div><div class="detail-score"><b>${item.score}</b><span>/${item.questions.length}</span><small>${pct}%</small></div><button class="text-button danger-text" data-action="delete-attempt" data-id="${item.id}">${icon('trash', 16)} Excluir este resultado</button></section>
         <section class="result-breakdown panel"><div class="panel-heading"><div><span class="eyebrow">MATÉRIAS</span><h2>Desempenho</h2></div><b>Tentativa registrada: ${item.cleanScore ?? item.score}/${item.questions.length}</b></div><div class="breakdown-grid">${Object.entries(SUBJECTS).map(([key, subject]) => { const data = item.bySubject[key]; if (!data?.total) return ''; const value = Math.round(data.correct / data.total * 100); return `<div class="breakdown-item"><div><span class="subject-dot" style="--dot:${subject.color}"></span><b>${subject.short}</b><strong>${data.correct}/${data.total}</strong></div><div class="bar"><i style="width:${value}%;--bar:${subject.color}"></i></div></div>`; }).join('')}</div></section>
         ${errorAnalysis(item)}
         <section class="review-section"><div class="section-heading"><div><span class="eyebrow">RESPOSTAS</span><h2>Revisão completa</h2></div></div><div class="review-list">${item.questions.map((q, index) => reviewItem(item, q, index)).join('')}</div></section>
@@ -859,6 +902,23 @@
     }
   }
 
+  function deleteAttempt(id) {
+    const items = history();
+    const item = items.find((attempt) => attempt.id === id);
+    if (!item) return;
+    if (!window.confirm('Excluir este resultado do histórico? A nota e as respostas dele serão apagadas. As questões voltam a contar como ainda não vistas.')) return;
+    saveJson(STORAGE.history, items.filter((attempt) => attempt.id !== id));
+    // Releasing the draw keeps the rotation from treating deleted attempts as seen.
+    const keys = item.questions.map(window.CPM_PRACTICE.fingerprint).join('|');
+    const draws = loadJson(STORAGE.draws, []);
+    if (Array.isArray(draws)) saveJson(STORAGE.draws, draws.filter((draw) => (draw.keys || []).join('|') !== keys));
+    state.result = null;
+    state.historyDetail = null;
+    toast('Resultado excluído do histórico.');
+    state.view = 'history';
+    historyView();
+  }
+
   function clearHistory() {
     if (!window.confirm('Apagar todo o histórico? Essa ação não pode ser desfeita, a menos que você tenha um backup.')) return;
     localStorage.removeItem(STORAGE.history);
@@ -889,7 +949,9 @@
     if (action === 'zoom-visual') return zoomVisual(target.dataset.visual);
     if (['home', 'create', 'history', 'sources', 'review', 'archive'].includes(action)) return navigate(action);
     if (action === 'open-edital') return openEdital();
-    if (action === 'resume') return resumeExam();
+    if (action === 'resume') return resumeExam(target.dataset.id || null);
+    if (action === 'discard-exam') return discardExam(target.dataset.id);
+    if (action === 'delete-attempt') return deleteAttempt(target.dataset.id);
     if (action === 'set-mix') {
       state.draftMix = target.dataset.mix;
       const input = document.getElementById('student-name');

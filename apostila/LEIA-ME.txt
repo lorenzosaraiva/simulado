@@ -1,0 +1,27 @@
+APOSTILA DE ESTUDO — CPM E CEP — INGRESSO NO 6º ANO, 2027
+
+Entrega principal:
+  ../Apostila-CPM-CEP-6ano-2027.pdf
+
+Os capítulos numerados desta pasta são as fontes editáveis do PDF, em UTF-8.
+O volume reúne teoria, exemplos, mapas e esquemas, guias de leitura,
+64 exercícios autorais, respostas comentadas e referências aos editais.
+
+Para gerar novamente no ambiente atual:
+  python apostila/gerar_apostila.py
+  python apostila/conferir_apostila.py
+
+Dependências: Python, ReportLab, PyMuPDF e fontes Arial do Windows.
+Os mapas usam web/fiel e a malha de UFs em web/cep/br-uf.geojson.
+
+Registros de geração, cálculos, fontes e inspeção visual:
+  ../artifacts/apostila/
+
+Documentos de base:
+  Edital CPM nº 001/2026, Anexo A (ingresso 2027).
+  Edital CEP nº 005/2026, Anexo II.
+  Provas CPM Paraná do acervo de 2018 a 2025.
+  Fontes institucionais e editoriais identificadas na seção 11 do PDF.
+
+Os arquivos do aplicativo e os documentos originais não são alterados
+pelo gerador. O material não inclui o texto integral das obras literárias.

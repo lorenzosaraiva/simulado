@@ -108,3 +108,6 @@ select:focus-visible,textarea:focus-visible { outline:3px solid #3156a4; outline
   .cep-answer-card>div { grid-template-columns:38px repeat(4,minmax(0,1fr)) 53px; gap:5px; }.cep-answer-card>div>span { grid-column:1/-1; grid-row:auto; font-size:12px; }.cep-answer-card button { font-size:13px; }
   .cep-hero { padding-top:10px; }.cep-hero p { font-size:16px; }.cep-actions .button { flex-grow:1; }
 }
+
+.cep-open-session { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:10px 0; }
+.cep-open-session > span { flex:1 1 220px; font-weight:600; }

@@ -9,7 +9,7 @@
   const para=text=>`<p>${esc(text).replace(/\n/g,'<br>')}</p>`;
   const list=items=>`<ol class="cep-method">${items.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`;
   const block=(heading,html)=>`<section class="cep-card"><h2>${heading}</h2>${html}</section>`;
-  const canOpen=()=>{if(data().session?.deadline){message('Entregue ou descarte o simulado antes de abrir aulas e correções.');return false;}return true;};
+  const canOpen=()=>true;
   function openItem(id){if(!canOpen())return;state().lastItem=id;save();api.openGuide();}
   function skillSummary(stat){return `${stat.questions} questões diferentes no histórico · ${stat.available.length} disponíveis · ${stat.newCount} ainda não respondidas`;
   }
